@@ -1,0 +1,2625 @@
+ This item is the archived peer-reviewed author-version of:
+Keeping the data lake in form : proximity mining for pre-filtering schema matching
+Reference:
+Alserafi Ayman, Abello Alberto, Romero Oscar, Calders Toon.- Keeping the data lake in form : proximity mining for pre-filtering schema matching
+ACM transactions on information systems / Association for Computing Machinery - ISSN 1046-8188 - 38:3(2020), 26 Full (Publisher's DOI): https://doi.org/10.1145/3388870 To cite this reference: https://hdl.handle.net/10067/1742940151162165141
+Institutional repository IRUA Keeping the Data Lake in Form: Proximity
+Mining for Pre-filtering Schema Matching
+Ayman Alserafi
+1,2
+, Alberto Abell ́o
+1
+, Oscar Romero
+1
+, and Toon Calders
+3
+1
+Universitat Polit`ecnica de Catalunya - BarcelonaTech, Barcelona, Catalunya, Spain
+{alserafi,aabello,oromero}@essi.upc.edu
+2
+Universit ́e Libre de Bruxelles (ULB), Brussels, Belgium
+3
+Universiteit Antwerpen (UAntwerp), Antwerp, Belgium
+toon.calders@uantwerp.be
+Abstract.Data Lakes (DLs) are large repositories of raw datasets from
+disparate sources. As more datasets are ingested into a DL, there isan
+increasing need for efficient techniques to profile them and to detect the
+relationships among their schemata, commonly known asholistic schema
+matching. Schema matching detects similarity between the information
+stored in the datasets to support information discovery and retrieval.
+Currently, this is computationally expensive with the volumeof state-of-
+the-art DLs. To handle this challenge, we propose a novel early-pruning to improve efficiency, where we collect different types ofcontent
+metadataandschema metadataabout the datasets, and then this
+metadata in early-pruning steps to pre-filter theschema matchingcom-
+parisons. This involves computing proximities between datasets on their metadata, discovering their relationships on overall prox-
+imities and proposing similar dataset pairs for schema matching. We
+improve the effectiveness of this task by introducing a supervised mining for effectively detecting similar datasets which are proposed
+for further schema matching. We conduct extensive experiments on a
+-world DL which proves the success of our in effectively
+detecting similar datasets for schema matching, with recall rates of more
+than 85% and efficiency improvements above 70%. We empirically show
+the computational cost saving in space and time by applying our ap-
+proach in comparison to instance- schema matching techniques.
+Keywords:Data Lake Governance, Holistic Schema Matching, Content Meta-
+data Management, Early-pruning, Dataset Similarity Mining
+1 Introduction
+Today, it is more and more common for data scientists to Data Lakes (DLs)
+to store heterogeneous datasets coming from different sources in theirraw format
+[35]. Such data repositories support the era of data analytics wheredatasets
+are ingested in large amounts and are required to be analysed just-in-time [20].
+However, it is a challenge for data wranglers [13,16,35] preparing the datasets
+The final publication is available at ACM via http://dx.doi.org/10.1145/3388870 2A. Alserafi .
+for analysis to understand their structure andcommonalitiesfor DL governance
+purposes [4]. They must extract those datasets which have related data to be together in data analysis tasks [20,23]. This is commonly referred toas
+schema matching, where the aim is to find connection strengths between similar
+concepts from different pairs of datasets [8,10,21,27]. The large-scale application
+of such a task to big data repositories DLs is referred to asholistic schema
+matching[5,23,27,29], where the goal is to match multiple datasets together
+considering them all in the matching task.
+We focus on DLs having datasets storing data in flat tabular formats. Flat
+datasets are organised as attributes and instances, such as tabular data, comma
+separated values (CSV) files, hypertext markup language (HTML) tables, etc.
+(see 3). It is a challenge with such DLs to efficiently process the datasets
+to detect their common features, as schema matching tasks are generally ex-
+pensive (involving huge amounts of string comparisons and mathematical cal-
+culations) [7,8,17]. In this paper, we propose novel techniques to reduce those
+comparisons usingpre-filteringtechniques that generate less comparisons. To
+illustrate this, consider the different types of comparisons in Fig.1. Tradition-
+ally, schema matching makes many comparisons of data values of instances from
+different datasets (see the instance- matching box). With the rise of DLs,
+previous research [5,12,7] recommended early-pruning steps to facilitate
+the task usingschema matching pre-filtering. Here, only datasets detected to be
+of relevantsimilarityare recommended for further fine-grained schema matching
+tasks, and dissimilar ones are filtered out from further comparisons. Fig. 1 re-
+flects this stratified that filters by means of extracted metadata at the
+dataset and level before going for expensive instance-basedapproaches.
+For example, consider a DL with 1000 datasets, with 15 attributes and 1000 in-
+stances each. Since schema matching techniques generate
+n∗(n−1)
+2
+comparisons,
+it would result in 499500 comparisons at the dataset level, 113 million at the level and about 500 billion at the instance level. Clearly, fine-grained
+comparisons do not scale and pre-filtering is necessary.
+We propose a pre-filtering on different levels of granularity, at
+which we collect metadata data profiling techniques. Our collects
+metadata at two different levels: at the dataset and level. This metadata
+is then in a supervised learning model to estimateproximityamong pairs
+of datasets. Such proximity is then for pruning out pairsless likelyto be
+related. This is illustrated in Fig. 1, where our goal is to filter candidate pairs
+of datasets before conducting computationally intensive instance- schema
+matching techniques. The scope of this paper is the early-pruningat the top
+two granularity tiers. We refer the interested reader to previousresearch about
+classical instance- schema matching which is outside the scope of this paper
+[7,8,21,30,31].
+It is a challenge to compute dataset similarities for pre-filtering tasks due to
+the difficulty of finding adequate similarity metrics and features touse [5]. This
+paper is an extension of our previous work [5], and it presents a novel proximity
+4
+4
+In this paper, we proximity and similarity interchangeably. Proximity Mining for Pre-filtering Schema Matching3
+Dataset-level matching
+-level matching
+Instance- matching
+Content-
+metadata
+(Relationships)
+Filtering
+pairs to
+generate less
+comparisons
+More
+comparisons
+needed
+DS-Prox
+(Dataset Proximity mining)
+Dataset
+Meta-
+features
+-Prox
+( Proximity mining) Meta-
+features
+Schema matching
+(string/semantic similarity) Values
+Goal
+Cost
+Fig. 1: The stratified holistic schema matching at different levels of
+granularity.
+mining (see 4) between datasets. The similarity functions are on automatically extracted metadata and can be effectively for pre-
+filtering in a stratified (see the DS-Prox and -Prox boxes
+attached to the matching steps in Fig. 1). To our knowledge, no other uses automatically extracted metadata for this purpose.
+To show the feasibility of our , we assess its performance by it
+on a -world DL. Our was able to filter the of fine-grained
+comparisons by about 75% while maintaining a recall rate of at least 85% after
+filtration. Our early-pruning also saves computational costs interms
+of space and time requirements by at least 2 orders of magnitude compared to
+instance- matching.
+Contributions.We present an for pre-filtering schema matching
+tasks. We propose techniques for detecting similar schemata onmeta-
+data at different levels of granularity. This supports in early-pruning of the
+raw-data instance- schema matching tasks. We present an expanded and
+cross-validated experiment for the DS-Prox technique from our previous work
+[5] and comparisons against combining it with our proposed -level
+proximity metrics to find the most appropriate metrics to assign similarities
+between pairs of datasets. We demonstrate a detailed analysis of the different
+proximity metrics on different types of meta-features (name- and
+content-). Our improvements outperform our previous work in terms of
+effectiveness measures recall and lift-scores.
+The paper is organised as follows: 2 presents the related work, 3 introduces the main concepts in our research, 4 presents our
+proximity mining for early-pruning tasks of holistic schema
+matching, 5 presents our experimental evaluation, and finally,we con-
+clude in 6. 4A. Alserafi .
+2 Related Work
+State-of-the-art schema matching techniques either schema-level metadata
+(mainly names and data types of schema components) [10,11,25,27] or instance-
+level values of data objects [8,10,12,14,21,25,33]. Some others a hybrid ap-
+proach utilising schema metadata and data instances [7,28]. At the schema-level,
+these techniques usually the syntactic similarity of the names of the schema
+components for the matching task. At the instance-level, values are usually com-
+pared Jaccard similarity of intersecting exact values [23]. This can also be
+achieved by first matching duplicate instances and finding the correspondences
+between their schema components [8]. Further, these algorithms canbe domain-
+specific or generic [21].
+Schema matching is a computationally intensive task that requires large
+amounts of comparisons [4,5,7] because they typically generate a Cartesian prod-
+uct between the values to be compared. Moreover, other approaches alsoexploit
+the semantic or linguistic similarity of values, which requires further computa-
+tions to translate data values (finding synonyms and hypernyms) or to map them
+to ontologies [21].
+The current focus of the schema matching research community is toimple-
+ment efficient holistic schema matching that improves performanceby reducing
+the of actual comparisons to conduct [23]. To handle this challenge,
+multiple techniques were proposed. For example, several approachesuse cluster-
+ing techniques as a pre-filter of datasets to match [3,6,27]. Only datasets falling
+in the same cluster are matched, or datasets from one cluster are only matched
+against representative datasets from other clusters. This is similarto the concept
+of “blocking” for record linkage [32], where items having equal data values in
+some or all of their attributes are placed in the same bucket for comparison. The
+work in [32] focuses on matching instances of data (rows in tabular data) rather
+than attributes in schemata (columns in tabular data). We propose in this paper
+a supervised learning technique that can classify dataset pairs (schemata) for a
+decision whether they are related (should be compared) or not related,rather
+than unsupervised techniques blocking and clustering. Inaddition, we tackle
+the similar schemata search problem (i.e., schema matching) ratherthan similar
+records search (i.e., record linkage or entity resolution).
+In [27], they cluster the schemata and attributes of datasets on TF-IDF
+similarity scores of their textual descriptions. In [3], they exploit the structural
+properties of semi-structured XML documents, i.e., data elements embeddings
+and hierarchies, to cluster the datasets before applying instance- schema
+matching. In [6], they the textual descriptions and keywords of the datasets
+to cluster them TF-IDF and WordNet. In this paper, we do not con-
+sider textual descriptions of datasets, which could be misleading ormissing, but
+rely on metadata that can be automatically extracted from any dataset. Meta-
+data describing datasets, their schemata, and the information stored in them
+can be collected data profiling techniques [1,4,18,20,24]. Different types of
+metadata can also describe the information inside datasets at differentlevels of Proximity Mining for Pre-filtering Schema Matching5
+granularity, e.g., overall dataset level [5] or descriptionslike we propose
+in this paper.
+The pre-filtering of dataset pairs which are less-likely to have interrelated
+data before performing schema-matching is called early-pruning [4,12,7], and it
+was implemented in previous research on semi-structured datasets, XML, by
+finding the similarity of hierarchical structures between named data objects [3].
+Other works have investigated schema matching with semi-structured datasets XML [21,25] and JSON [14]. In the web of data, previous research [26]
+investigated recommendation of RDF datasets in the semantic web usingpre-
+defined annotations such as thesameAsproperty. In this paper, we consider
+flat datasets without such a hierarchy of embedded data objects and without
+pre-defined semantic linkages.
+To facilitate the early-pruning tasks for schema matching, we can apply the
+same approaches and concepts from collaborative filtering and adapt them to
+the holistic schema matching problem [2,15]. The goal is to profilinginfor-
+mation for comparison and recommendation, which was applied to multimedia
+in [2] and semi-structured documents in [14]. Content- metadata was also to predict schema labels [11]. They minimum and maximum values for
+numeric attributes, and exact values for nominal attributes, including the format
+of values. We propose to apply similar techniques but at the dataset granularity
+level. Accordingly, we adapt such techniques and find the appropriate similarity
+metrics for tabular datasets.
+Another line of research aims at optimising the schema matching process by computational improvements [12,28]. This can be done partitioning
+techniques that parallelise the schema matching comparison task [28].Another uses efficient string matching comparisons. Such techniques are very
+useful in the case when schema components are properly named in the datasets.
+However, such techniques fail when the components are not properly named (e.g.,
+internal conventionalism, sequential ID numbering of the components). In
+[12], they introduce intelligent indexing techniques on value- signa-
+tures.
+Schema matching can also be automated data mining techniques [10,11,14].
+In [10], they hybrid name- and value- classification models to
+match dataset attributes to a mediated integration schema. Their is
+focused on one-to-one mediation between two schemata, while our approachtar-
+gets all datasets in a DL by holistic schema matching coarser meta-features.
+In [11], they content- meta-features in multi-value classification mod-
+els to match schema labels of attributes across datasets. Decision trees were
+also to profile semi-structured documents before schema matching [14]. In
+this paper, we also data mining classification models, however the goal dif-
+fers from [10], [11] and [14] as it tackles the early-pruning and pre-filtering task
+rather than instance- schema matching.
+We summarise the state-of-the-art in Table 1. This table gives a compari-
+son of the most relevant techniques discussed with our onthe
+main features discussed in this . As a result, we can see thatwe propose 6A. Alserafi .
+an not only on string matching, but also on content metadata
+matching involving statistics and profiles of data stored in the datasets. Con-
+tent metadata are matched on approximate similarities and not justexact
+value-matches at the instance-level [20,23]. We focus on proposing novel early-
+pruning techniques that supervised learning to pre-filterirrelevant dataset
+pairs and to detect likely-to-be similar pairs. Finally, the table shows that our
+technique makes a novel contribution to the schema matching pre-filtering prob-
+lem that is not achieved by other state-of-the-art techniques.
+Table 1: Schema matching techniques state-of-the-art comparison
+COMA++
+[28]
+PARIS [33]LOD Data
+Linking [6]
+XML
+Semantic- Matching
+[17]
+Ontology
+Clustering
+[3]
+Proximity
+Mining
+[this
+paper]
+Type of DataTabular,
+semi-
+structured,
+Semantic
+OWL
+RDFSemantic
+RDF
+Semi-
+structured
+XML
+Semi-
+structured,
+Semantic
+OWL
+Tabular
+Instance-basedXXXX××
+Metadata usedAttribute-
+level schema
+names
+×Ontology
+mappings,
+RDF schema
+names,
+Textual
+descriptions
+-
+level schema
+names and
+structural
+metadata
+-
+level struc-
+tural meta-
+data
+Dataset-
+level content
+and name,
+-
+level content
+and name
+Data Mining ××Clustering×ClusteringSupervised
+learning
+Approximate
+Matching
+××X×XX
+3 Preliminaries
+Att1Att2Att3
+Value 1a 0.25 Value 3a Value 1b 55.6Value 3b Value 1c 27.9Value 3c Value 1d 73.1Value 3d Attributes
+Instances
+Fig. 2: A flat dataset with attributes and instances. Proximity Mining for Pre-filtering Schema Matching7
+We consider DLs with datasets having tabular schemas that are structured
+as attributes and instances Fig. 2. We formally define a datasetDas a set
+of instancesD={I
+1
+, I
+2
+, ...I
+n
+}. Each dataset has a schemaS={A
+1
+, A
+2
+, ...A
+m
+},
+where each attributeA
+i
+has adata typeand describes a single property of the in-
+stances in the dataset. We focus on two types of attributes:numeric attributes
+(consisting of numbers) andnominal attributes(consisting of discrete cat-
+egorical values). We differentiate between those two types of attributes, similar
+to previous research [10,11,25], because we collect different profiling meta-
+data for them. The resulting statistics collected are calledcontent meta-features,
+and are as follows:
+– Nominal attributes:frequency distributions of their distinct values.
+– Numeric attributes:aggregated statistical value distributions mean,
+min, max, and standard deviations.
+For pairs of datasets and attributes, we compute the functions in Table 2
+and describe them in the rest of this .
+Table 2: Schema matching pre-filtering functions
+RelationshipFunction TypeOutputObject TypeDescription
+Rel(A
+i
+, A
+j
+)BinaryZ∈{0,1} pairRelated attributes storing data
+about the same -life concept
+which contain overlapping informa-
+tion in their values. 1 means posi-
+tively related and 0 means not.
+Sim(A
+i
+, A
+j
+)ContinuousR∈[0,1] pairA valueRto measure the similarity in the range [0,1].
+Rel(D
+y
+, D
+z
+)BinaryZ∈{0,1}Dataset pairRelated datasets which contain in-
+formation about the same -life
+object. 1 means positively related
+and 0 means not.
+Sim(D
+y
+, D
+z
+)ContinuousR∈[0,1]Dataset pairA valueRto measure the dataset
+similarity in the range [0,1].
+We aim at finding the relationship between a pair of datasetsRel(D
+y
+, D
+z
+).
+We determine such relationship directly dataset-level meta-features and
+by computing the relationships between their pairs of attributes (A
+i
+, A
+j
+), being
+A
+i
+fromD
+y
+andA
+j
+fromD
+z
+, as could be seen in Fig. 3. The shows an
+overview of our proposed proximity mining .
+The goals of the is to efficient and effective techniques to
+accurately predictRel(D
+y
+, D
+z
+) for the pre-filtering task. As could be seen in
+Fig. 3, this can be done metadata and similarity collected at the dataset
+level (right-side) or by the levelSim(A
+i
+, A
+j
+) to predict it (left-
+side). The shows the steps required for combining -level similar-
+ity with the dataset-level similarity to predictRel(D
+y
+, D
+z
+). Here, we only Sim(A
+i
+, A
+j
+) as an auxiliary step that supports us in the main task of predicting
+Rel(D
+y
+, D
+z
+). This is possible because the metadata are of finer gran-
+ularity which can be aggregated to a single similarity score at the dataset-level 8A. Alserafi .
+-level
+Proximity
+Dataset-level
+Proximity Content
+Meta-features
+Attributes Names
+Dataset Content
+Meta-features
+Datasets Names
+Levenshtein
+distance
+P
+m
+computation
+Sim(A
+i
+,A
+j
+)
+Agg
+Levenshtein
+distance
+P
+m
+computation
+M
+cls-ds
+M
+cls-num-attr /
+M
+cls-nom-attr
+Sim(D
+y
+,D
+z
+)
+Rel(A
+i
+,A
+j
+)
+Rel(D
+y
+,D
+z
+)
+Fig. 3: The dependencies of components in the metadata- proximity mining for pre-filtering schema matching.
+with an aggregation functionAgglike averagingSim(A
+i
+, A
+j
+) scores. When pre-
+dictingRel(D
+y
+, D
+z
+), typically the dataset pair will have information contained in
+some of their attributes which are partially overlapping, satisfyingRel(A
+i
+, A
+j
+),
+where∃A
+i
+∈D
+y
+∧A
+j
+∈D
+z
+=⇒Rel(A
+i
+, A
+j
+) = 1. An example would be a
+pair of datasets describing different human diseases, (e.g., diabetes and hyper-
+tension). The datasets will have similar attributes (partially) overlapping their
+information the patient’s age, gender, and some common lab tests likeblood
+samples.
+Theintermediate outputleading toRel(A
+i
+, A
+j
+) andRel(D
+y
+, D
+z
+) in our pro-
+posed proximity- , seen in Fig. 3, is a similarity score consisting
+of a in the range of [0,1], which we indicate usingSim(A
+i
+, A
+j
+) and
+Sim(D
+y
+, D
+z
+) respectively.
+The similarity scores are computed on proximity models we construct ensemble supervised learning techniques [34], which we denote asM
+cls−ds
+for models handling dataset-level metadata andM
+cls−num−attr
+orM
+cls−nom−attr
+for models handling -level metadata (depending on the type,
+numerical or nominal respectively). The models take as input thedistancebe-
+tween the meta-features describing content of each object pair, whether dataset
+pair or pair forSim(D
+y
+, D
+z
+) andSim(A
+i
+, A
+j
+) respectively, and we call
+the distance in a specific meta-feature ‘m’a proximity metricwhich is denoted
+asP
+D
+m
+(D
+y
+, D
+z
+) for dataset pairs orP
+A
+m
+(A
+i
+, A
+j
+) for pairs. The names of Proximity Mining for Pre-filtering Schema Matching9
+objects can also be compared Levenshtein string distance comparison [22]
+to generate a distance score. The output from the models is a score we compute the positive class distribution (see 4.2).
+We convert the intermediate similarity scores to thefinal outputconsisting
+of a boolean value for the binary relationships Equations (1) and (2).The
+simscore computed for each relationship type is checked against a minimum
+threshold in the range of [0,1] to indicate whether the pair involved is overall
+related ‘1’ or unrelated ‘0’, and therefore whether they should be proposed for
+expensive schema matching or otherwise filtered out. cut-off thresholds
+of similarity rankings for the collaborative filtering task and schema matching
+is a common practice [12,15,20]. We can different thresholds ‘c
+d
+’ and ‘c
+a
+’
+for each of the relationship evaluated at the dataset level and level
+respectively. This means that we only consider a pairsimilarif their similarity
+score is greater than the threshold as in Equations (1) and (2).
+Rel(D
+y
+, D
+z
+) =
+{
+1, Sim(D
+y
+, D
+z
+)> c
+d
+0,otherwise
+(1)Rel(A
+i
+, A
+j
+) =
+{
+1, Sim(A
+i
+, A
+j
+)> c
+a
+0,otherwise
+(2)
+To summarise Fig. 3, the hierarchy to compute the final output is:Relis onSimsimilarity scores, which in turn are onP
+m
+proximity metrics
+of meta-features. To convert fromP
+m
+toSimwe an ensemble supervised
+modelM
+cls
+which takes theP
+m
+proximity metrics as input. The outputSim
+is compared against a minimum threshold, and those passing the threshold are
+positive cases forRelto be considered for further detailed schema matching.
+D
+2
+: census_dataD
+3
+: health_data
+A6: type {f,m} A11: gender {female,male} A7: age { 0<A2<100} A13: age { 30<A3<60} A8: race {01,02,03,04} A12: Ethnicity {AS,AF,ER,LT} A9: Household { 0<A4<16} A14: Temp { 35<A4<42} A10: income { 50k<A5<300k} A15: H_rate{ 40<A5<160} Rel(D
+2
+,D
+3
+) = 1
+D
+1
+: 1992_city_data A1: salary {25k<A1<600k} A2: age { 20<A2<97} A3: family_Size{ 2<A3<11} A4: identity {w,m,t}
+A5: house_type {h,t,v,s,p,l} . . .
+Rel(D
+1
+,D
+2
+) = 1
+. . .
+. . .
+Rel(A
+6
+,A
+11
+) = 1
+Rel(A
+1
+,A
+10
+) = 1
+Fig. 4: Final output of our consisting of similarity relationshipsbetween
+two pairs of datasets.
+Examples. Consider the relationships between the three datasets in Fig. 4
+which presents thefinal outputof our . Each dataset has a set of at-
+tributes. An arrow links attributes having similar data profiles. We label this
+as aRel(A
+i
+, A
+j
+) = 1. For example, attributes ‘A6’ and ‘A11’ fromD
+2
+andD
+3
+are nominal attributes with two unique values which we included as ameta-
+feature called‘ of unique values’. The proximity metric is the distance
+(difference) in the meta-feature of of unique values, whichin this case 10A. Alserafi .
+P
+A
+m
+= 0, because they are identical (i.e., 2−2 = 0), thus making the pair similar (in this case, by their of distinct values). Ifwe consider this
+proximity metric of ‘ of unique values’ alongside other collected content- meta-features anensemble supervised learning modelM
+cls
+, we can
+compute aSim(A
+6
+, A
+11
+) score on the positive-class distribution (see Sec-
+tion 4.2). This can lead toSim(A
+6
+, A
+11
+) = 0.95 and if we a threshold of
+c
+a
+= 0.75 then the final output forRel(A
+6
+, A
+11
+) = 1. A numeric ‘A7’ inD
+2
+holds similar data as attributes ‘A13’ and ‘A14’ fromD
+3
+, as ex-
+pressed by the intersecting numeric ranges. For such numeric attributes we can
+consider a meta-feature ‘mean value’. On the other hand, attributes ‘A1’
+and ‘A7’ have different data profiles (different numeric ranges) and therefore are
+not labelled with an arrow and do not satisfy theRel(A
+1
+, A
+7
+) relationship, as
+they will have large differences in their meta-features, leading to high proximity
+metric and a low similarity scores. In those examples, we collect level
+meta-features from the datasets (in this case, the of distinct values for
+nominal attributes and means for numeric attributes) to assess the similarity
+between attributes of a given pair of datasets. In our , we computethe
+similarity between attributesSim(A
+i
+, A
+j
+) proximity metrics
+in the range of [0,1] and we it to predictRel(D
+y
+, D
+z
+) instead of the
+binary output ofRel(A
+i
+, A
+j
+). We shouldaggregatethe individual pairs’
+similarities with an aggregation functionaggto obtain a single value proximity
+metric for the overall dataset level similarity. We discuss this in the description
+of our in 4.
+Furthermore, we extract higher-granularity dataset level meta-features (e.g.,
+‘ of attributes per type’) from the datasets for thetask of di-
+rectly computing theSim(D
+y
+, D
+z
+) similarity relationships. For example,Rel(D
+2
+, D
+3
+)
+returns ‘1’ in the case we usec
+a
+= 0.67 because they have 2 nominal and 3 nu-
+meric attributes each, so overall they can haveSim(D
+2
+, D
+3
+) = 0.7 passing the
+minimum threshold. onRel(D
+2
+, D
+3
+) =‘1’, our indicates that
+these two datasets are possibly related and should be considered for further
+scrutinising by schema matching.
+4 : Metadata- Proximity Mining for
+Pre-filtering Schema Matching
+Our goal is to effectively apply early-pruning for holistic schema matching in
+a DL setting. Such pre-filtering is on novel proximity mining techniques.
+Those techniques evaluate similarity among pairs of datasets automatically
+extracted meta-features and utilising a data-mining ensemble supervised model
+to select highly similar pairs. We apply this the stratified (Fig.
+1). An overview of the is summarised in Fig. 3, which shows the steps
+required to compute the schema matching pre-filtering functions from Table 2.
+We explain how we build and apply those models in this .
+In the remaining subsections, we describe the details of our ap-
+proach as follows:profile the datasets to extract the meta-features and pair- Proximity Mining for Pre-filtering Schema Matching11
+wise proximity metrics inSubsection 4.1, supervised proximity mining to
+build the ensemble models forRel(A
+i
+, A
+j
+) andRel(D
+y
+, D
+z
+) inSubsection 4.2,
+then apply the models on pairs of attributes and datasets in the DL to com-
+pute theirSim(A
+i
+, A
+j
+) andSim(D
+y
+, D
+z
+) scores inSubsection 4.2, and finally theSim(D
+y
+, D
+z
+) to predictRel(D
+y
+, D
+z
+) for pairs of datasets and applying
+the pre-filtering step for schema matching inSubsection 4.3.
+4.1 Proximity Metrics: Meta-features distances
+Our gathers metadata at two levels of granularity: at theI. dataset
+levelandII. level. Further, at each of these levels, we gatherA.
+content-basedmeta-features with profiling statistics andB. name-
+meta-features with the naming of datasets and their attributes. The name-
+techniques are the most commonly metadata in previous research [14,30,31].
+We propose other content- meta-features at the two levels of granularity
+as follows:
+–Dataset level (DS-Prox):We collect overall meta-features summarising
+the dataset content: overall statistics concerning all the attributes collec-
+tively, the types found and the overall of instances. The
+meta-features are described in our previous work [5], which includes a
+detailed list of meta-features that proved to be effective in predicting related
+datasets for schema matching pre-filtering, e.g., of instances, of attributes per type, dimensionality, of missing values,
+etc.
+– level (-Prox):The set of meta-features for both
+types of attributes, nominal and numeric, is described in Table 3. Foreach
+attributeA
+i
+in datasetD, we profile it on its type by computing the
+appropriate features.
+Table 3: level content meta-features TypeMeta-featureDescription
+AlldistinctvaluescntThe of distinct values
+AlldistinctvaluespctThe percentage of the distinct values from of instances
+AllmissingvaluespctThe percentage of missing values from of instances
+NominalvalsizeavgThe average of strings in values from the NominalvalsizeminThe minimum of strings in values from the NominalvalsizemaxThe maximum of strings in values from the NominalvalsizestdThe standard deviation of of strings in values from the NominalvalpctmedianThe median percentage of instances per each value of the NominalvalpctminThe minimum percentage of instances per each value of the NominalvalpctmaxThe maximum percentage of instances per each value of the NominalvalpctstdThe standard deviation of the percentage of instances per each value of the NumericmeanThe mean numeric value of the NumericstdThe standard deviation of the numeric value of the NumericminvalThe minimum numeric value of the NumericmaxvalThe maximum numeric value of the NumericrangevalThe numeric range of the values of the NumericcoofvarThe numeric coefficient of variance of the Equation 3 shows the proximity metric computed for a pair of attributes (or
+datasets), denoted asO
+i
+,O
+j
+. the meta-features described, we compute the 12A. Alserafi .
+z-score distance for each meta-featurem. The result is a ,P
+m
+. The
+z-score is a normalisation where we the mean ‘μ’ and standard deviation ‘σ’
+of each meta-feature considering its value from all datasets in the DL. A value
+of 0 is the most similar, while larger negative or positive means more
+different. The z-score is to standardise the comparisons of attributes in a
+holistic manner that considers all datasets and attributes in the DL. Most pairs
+of attributes and dataset will have a value falling in the range of [−3,3].
+P
+m
+=zscore
+distance(O
+i
+, O
+j
+) =
+∣
+∣
+∣
+∣
+m(O
+i
+)−μ
+σ
+−
+m(O
+j
+)−μ
+σ
+∣
+∣
+∣
+∣
+(3)
+For the name- metadata we compute the proximity metricP
+m
+with a
+Levenshtein string comparison [22], as in Equation 4.
+P
+m
+=levenshtein
+distance(name(O
+i
+), name(O
+j
+))(4)
+4.2 Supervised Proximity Mining
+After the different proximity metrics of meta-features are generated by profil-
+ing the datasets, arepresentative sample(an adequate sample size should be
+similar to the sample in our experiments in 5) of dataset and pairs should be selected by a human annotator and should be labelled whether
+they satisfyRel(D
+y
+, A
+z
+) andRel(A
+i
+, A
+j
+) respectively. The dataset and pairs with their proximity metrics and labels are fed to a supervised learning
+algorithm to create a proximity scoring model. We propose supervised ensem-
+ble models on different dataset level and level proximity metrics
+for computing overall similarity between pairs of datasets. The models decide
+on the of attributes to consider in order to evaluate a pair of datasets
+as ‘related’ by different aggregation functionsaggfor the level
+metrics, giving different weights to a different of linkages of
+different similarity ranks. This will be explained in detail in this .
+Our builds supervised ensemble modelsM
+cls−ds
+forRel(D
+y
+, D
+z
+),
+andM
+cls−nom−attr
+&M
+cls−num−attr
+forRel(A
+i
+, A
+j
+) whether the type
+is nominal or numerical respectively. Model- learning for pre-filtering has
+been applied before in the collaborative filtering field [2]. In such scenarios, item
+pairs are recommended or filtered out model- learning algorithms
+where a learnt model is to assign the similarities and rankings ofitem pairs on previously annotated examples. We give details of how we learn the
+models and how we them in our in the subsections below.
+Building the models from annotated samplesAn overview process for
+building the supervised models in our can be seen in Fig. 5. In the
+buildphase, we take the pairs of datasets and profile them by computing their
+dataset level and level meta-features, followed by computing the prox-
+imity metrics for those extracted features. We take different dataset pair samples
+for building the level models and the dataset level models as seen in
+the split into samples OML01 and OML02 (how to build such samples is given in Proximity Mining for Pre-filtering Schema Matching13
+Pairs
+of DS
+Data
+Lake
+Profile -
+level Meta-
+features
+Build Dataset-level Classification Model
+M
+cls_ds
+DS Pairs
+Training
+Sample
+Aggregate -
+level proximity to
+dataset-level
+Agg Pairs
+Training
+Sample
+Sample
+OML01
+Sample
+OML02
+Profile -
+level Meta-
+features
+Apply -level
+Proximity Model
+Sim(A
+i
+,A
+j
+)
+Profile Dataset-level
+Meta-features
+-level
+profiling
+Dataset-level
+profiling
+Build -level Classification Models
+M
+cls_num_attr
+M
+cls_nom_attr
+Evaluate
+-level
+Classifiers
+Rel(A
+i
+,A
+j
+)
+Evaluate
+Dataset-level
+Classifier
+Rel(D
+y
+,D
+z
+)
+Compute
+-level
+meta-feature
+proximity metrics
+P
+m
+Compute
+-level
+meta-feature
+proximity metrics
+P
+m
+Compute Dataset-
+level meta-feature
+proximity metrics
+P
+m
+Fig. 5: An overview of the process tobuildthe supervised ensemble models in
+our proposed datasets proximity mining previously manually
+annotated dataset pairs. 5.1). The pairs in sample OML01 should be already annotated to indicate
+whether their attributes match (i.e.,Rel(A
+i
+, A
+j
+) for level models) or
+whether the datasets are relevant for schema matching or not in sample OML02
+(i.e.,Rel(D
+y
+, D
+z
+) for dataset level models). Initially, we start with the level supervised learning procedure as it is only an auxiliary subcomponent for the dataset level, where an aggregation step is to compute dataset level
+proximities. First, we divide the pairs into training and test sets, we train a su-
+pervised learning ensemble model for each type (nominaland numeric
+types) the training sample, and we test the performance of themodel on
+the test set (evaluation distinguished by dotted lines and circlesin the ).
+We conduct this test to guarantee that the models generated are accuratein
+detectingRel(A
+i
+, A
+j
+). Similarly, we do the same with the dataset level super-
+vised models which generateRel(D
+y
+, D
+z
+). We the dataset level proximity
+metrics and the level aggregated proximity metrics together to train
+a supervised model a training sub-sample of dataset pairs fromOML02.
+Finally, we evaluate the generated dataset level supervised modelsto guarantee
+their accuracy in detectingRel(D
+y
+, D
+z
+).
+Supervised learning.To build the models, we classical supervised
+learning to create the proximity models. The meta-features are as input to
+the models as seen in Fig. 6, where an object could be an for -
+level models or a dataset for dataset-level models. First, for each object we
+extract its meta-features (i.e., ‘m1’, ‘m2’, ...). Then, for each object, we gener-
+ate all pairs with each of the other objects and compute the proximity metrics
+between their meta-features either Equation 3 for content- meta-
+features or Equation 4 for the name- comparison. We then take a sample
+of pairs of objects which are analysed by a data analyst; a human-annotator
+who manually decides whether the pairs of objects satisfy (assign ‘1’)or not
+(assign ‘0’) theRelproperties (see 3). This can be achieved by simply
+labelling the objects with their respective subject-areas and those falling under
+the same one are annotated as positively matching ‘1’, otherwise all othersare 14A. Alserafi .
+OB 1
+Object
+OB 1
+Object
+OB 2
+Object
+OB n
+...
+Extract Meta-Features
+Profile 1Profile 2Profile n
+m1
+m2
+...
+10
+320
+m1
+m2
+...
+22
+1200
+m1
+m2
+...
+20
+550
+Annotate Pairs
+Rel(1,2) = '1'
+OB n
+OB n
+OB 2
+OB 2
+OB 1
+OB 1
+Rel(1,n) = '0'
+Rel(2,n) = '1'
+Compute distances
+per pair
+m1 = 0.55
+m2 = 0.73
+OB n
+OB n
+OB 2
+OB 2
+OB 1
+...
+m1 = 0.50
+m2 = 0.42
+...
+m1 = 0.09
+m2 = 0.54
+...
+Generate Training Set
+Tuples
+Run Ensemble Learning
+Algorithm
+OB 1
+OB 1
+OB 2
+OB 2
+OB n
+OB n
+Rel(ob1,ob2)
+Classifier
+0.55
+0.50
+0.09
+m1 m2
+0.73
+0.42
+0.54
+...
+...
+...
+...
+Rel
++
+-
++
+M
+cls
+Extract Meta-Features
+Extract Meta-Features
+Fig. 6: Proximity Mining: supervised machine learning for predicting related data
+objects.
+labelled with ‘0’ (see 5.1). We then supervised learning techniques
+and 10-fold cross-validation over the proximity metrics to create twotypes of
+independent models which can classify pairs of datasets or pairs of attributes
+according toRel(D
+y
+, D
+z
+) andRel(A
+i
+, A
+j
+) respectively. This is the final output
+consisting of the two auxiliary supervised modelsM
+cls−nom−attr
+,M
+cls−num−attr
+forRel(A
+i
+, A
+j
+) and the main dataset level modelM
+cls−ds
+forRel(D
+y
+, D
+z
+). The
+positive-class distribution from the generated models is toscorenew pairs
+of objects (unseen in the training process) with a similarity scoreSim(D
+y
+, D
+z
+)
+usingM
+cls−ds
+, andSim(A
+i
+, A
+j
+) usingM
+cls−nom−attr
+orM
+cls−num−attr
+.
+We a random forest ensemble algorithm [9,34] to train the supervised
+models in predicting related and dataset pairs as it is one ofthe most
+successful supervised learning techniques. The algorithm generates a similarity
+score on the positive-class distribution (i.e., the predicted probability of
+the positive-class on weighted averages of votes for the positive class from
+all the sub-models in the ensemble model) to generate a score in [0,1] forSim.
+For example, if Random Forest generates 1000 decision trees, and for a pair of
+datasets [D
+y
+, D
+z
+] we get 900 trees vote positive forRel(D
+y
+, D
+z
+) then we get
+900
+1000
+= 0.9 forSim(D
+y
+, D
+z
+) score.
+We feed the supervised learning algorithm the normalised proximity metrics
+of the meta-features for pairs of datasets [D
+y
+, D
+z
+]. For level meta-
+features, we feed theM
+cls−ds
+model with all the different aggregations of the
+meta-features after computing their normalised proximity metrics (i.e., after
+applying Equation 7, which we describe later in this ). Proximity Mining for Pre-filtering Schema Matching15
+ALGORITHM 1: Level Top-Similarity Matching
+Input:Sets of the meta-features of each typeAtt
+nominal
+andAtt
+numeric
+containing
+the proximity metrics of the meta-features of each in the pair{A
+i
+, A
+j
+}for
+each dataset in the pair{D
+y
+, D
+z
+}, the modelM
+cls−nom−attr
+for nominal attributes,
+the modelM
+cls−num−attr
+for numeric attributes, an aggregation functionAggfor
+aggregating links to compute dataset level proximity
+Output:The partially ordered setSPof proximity metricsP
+D
+m
+(D
+y
+, D
+z
+) for each pair of
+{D
+y
+, D
+z
+}
+SP
+dataset
+←∅;
+SP ←∅;
+SP
+top ←∅;
+foreach{D
+y
+, D
+z
+}⊂DLandy6=zdo
+foreach{A
+i
+, A
+j
+}⊂Att
+nominal
+andA
+i
+∈D
+y
+andA
+j
+∈D
+z
+do
+Sim(A
+i
+, A
+j
+) =M
+cls−nom−attr
+(A
+i
+, A
+j
+);
+SP ←SP ∪{[A
+i
+, A
+j
+, Sim(A
+i
+, A
+j
+)]};
+end
+foreach{A
+i
+, A
+j
+}⊂Att
+numeric
+andA
+i
+∈D
+y
+andA
+j
+∈D
+z
+do
+Sim(A
+i
+, A
+j
+) =M
+cls−num−attr
+(A
+i
+, A
+j
+);
+SP ←SP ∪{[A
+i
+, A
+j
+, Sim(A
+i
+, A
+j
+)]};
+end
+\\Iterate on the set of pairsSP to find top matching pairs
+whilemore pairs{A
+i
+, A
+j
+}can be pickeddo
+Pick pair{A
+i
+, A
+j
+}fromSP that maximisesSim(A
+i
+, A
+j
+) whereA
+i
+andA
+j
+were not picked before;
+SP
+top ←SP
+topattribute
+∪{[A
+i
+, A
+j
+, Sim(A
+i
+, A
+j
+)]};
+end
+P
+D
+m
+(D
+y
+, D
+z
+)←Agg(SP
+top );
+SP
+dataset
+←SP
+dataset
+∪{[D
+y
+, D
+z
+, P
+D
+m
+(D
+y
+, D
+z
+)]};
+end
+-level proximity.To compute the overall proximity of datasets their level meta-features we Algorithm 1, whichfirst com-
+pares the proximity metrics from the meta-features of each of a specific
+type against all other attributes of the same type in the other dataset M
+cls−nom−attr
+for nominal attributes andM
+cls−num−attr
+for numeric attributes.
+The algorithm then finds top matching pairs where we match each to the most similar in the other dataset agreedy ap-
+proach[19]. For each pair of datasets, we match each only once (we
+do not allow many-to-many matching). We rank pairs by proximity
+top-to-least, then we assign matching pairs on the top of the list where each did not appear in a previous higher ranking pair (i.e., both attributes
+need to be unmatched by any higher ranking pair in the list, otherwise the -
+gorithm skips to the next pair until all the list of pairs is traversed). Finally, in
+order to summarise the linkages to predict the overall proximity of the
+dataset pairs, we compute anaggregationof the top-matching linkages
+found between a pair of datasets anfunctionAggto convert the multi-
+pleSim(A
+i
+, A
+j
+) scores to a single proximity metricP
+D
+m
+for their dataset pair.
+We different types of level aggregation functions. Those functions
+assign different weights ‘W’ (which is an indicator of relevance, a bigger weight
+means more relevant) to the links to consider. The different aggrega-
+tions should have the goal of giving less weight to links which could be
+considered asnoise; i.e., those pairs which are too strongly correlated without 16A. Alserafi .
+any meaning (e.g., discrete ID numbers) or those pairs with too low
+proximity to be significant.
+Thus, the top-matching pairs of attributes are sorted by proximity weights
+and are fed to the aggregation which allocates a weight between [0,1]
+for aggregation in the summation of weights. The total sum of weights should
+add up to 1.0. The different aggregations we are as follows:
+–Minimum:we allocate all the weight (i.e.,W= 1.0) to the single pair link with the minimum similarity, and we consider this as the overall
+proximity between the dataset pair. Therefore, all top-matching pair links need to have a high similarity score to result into a highproximity
+for a dataset pair.
+–Maximum:we allocate all the weight (i.e.,W= 1.0) to the single pair link with the maximum similarity, and we consider this as the overall
+proximity between the dataset pair. Therefore, only one top-matching at-
+tribute pair link needs to have a high similarity score to result into a high
+proximity for a dataset pair.
+–Euclidean:a Euclidean aggregation of the similaritiesSimof all matching
+pairs of attributes without any weighting as in Equation 5. Here we consider
+all the pair links in the aggregation and we assign equal weights to
+all the links.
+P
+D
+m
+=
+√
+√
+√
+√
+n
+∑
+i=1,j=2
+[Sim(A
+i
+, A
+j
+)]
+2
+(5)
+–Average:a standard averaging aggregation of the pairs of attributes without
+any weighting, where all links are equally weighted in the average.
+–Weighted :a normal distribution to assign different prox-
+imity weightsWfor all linkages found, and then summing up all
+the weighted similarities as the overall proximity as in Equation 6.
+P
+D
+m
+=
+n
+∑
+i=1,j=2
+[W
+i
+∗Sim(A
+i
+, A
+j
+)](6)
+This is visualised in Fig. 7. Here the weight 0.0≤W≤1.0 for each top-
+matching linkage is assigned on ordering the linkages top-
+to-least in terms of their similarity scores, and the weight allocatedvaries
+according to a normal distribution. We different p-parameters (proba-
+bility of success) of{0.1,0.25,0.5,0.75,0.9}, where a parameter of 0.5 leads
+to a standard normal distribution of weights allocated for the sorted pairs
+of attributes. A lower parameter value leads to skewness to the left, allo-
+cating more weight to highly related pairs, and a higher parameter leads to
+skewness to the right, allocating higher weights to pairs with lower ranked
+relationships. This means that with lowerpwe expect similar datasets to
+have a few very similar attributes and a higherpvalue means we expect
+most of the attributes to be strongly similar. Proximity Mining for Pre-filtering Schema Matching17
+Assigned Weight
+Rank of Top Matching Pairs
+p = 0.75
+p = 0.50
+p = 0.25
+p = 0.90
+p = 0.10
+Fig. 7: Different normal distributions for assigning weights to rankedattribute
+linkages.
+As can be seen from their descriptions, each aggregation leads to a different
+meaning of similarity on the of linkages to consider and
+which linkages are considered more important (having higher weights
+assigned). All the dataset proximity metrics generated by the different aggrega-
+tions listed above are finally normalised Equation 7. The proximity metric
+P
+D
+m
+for two datasetsD
+y
+andD
+z
+is computed by multiplying the of match-
+ing attributes found (N), and divided by the minimum of attributes of
+both datasets (M in(|Attr
+y
+|,|Attr
+z
+|)). This is done to prevent an inaccurate sim-
+ilarity score for two datasets having few very similar attributes of asingle type,
+and many other attributes of different types. For example, if datasetD
+1
+has
+1 nominal and 10 numeric attributes andD
+2
+just has 8 nominal at-
+tributes, then if the single nominal inD
+1
+is highly similar to a nominal inD
+2
+(e.g.,Sim(A
+1
+, A
+2
+) = 0.9) then the overall outcome without nor-
+malisation will be a high proximity metric between both datasets although they
+have many disjoint types. The resulting proximity metric after nor-
+malisation for the datasets would be calculated as follows:P′
+D
+m
+= 0.9∗
+1
+9
+= 0.1,
+so overall they will have a low proximity compensating for all the unmatched
+attributes without corresponding types.
+P′
+D
+m
+=P
+D
+m
+∗
+N
+Min(|Attr
+y
+|,|Attr
+z
+|)
+(7)
+Applying the models on the DLIn the second phase, after building the
+ensemble models, we apply them to each pair of previously unseen datasets
+to achieve a measure of the similarity score. When applying the models, we
+compute for each pair of datasets the similarity score ofSim(D
+y
+, D
+z
+) and for
+each pairSim(A
+i
+, A
+j
+) the supervised models extracted in the
+previous phase. TheSimscore is the positive-class distribution value generated
+by each ensemble model [34]. For the level scoring, we complete the
+proximity mining task by aggregating thesimscores between pairs of datasets 18A. Alserafi .
+(as seen in the last steps of Algorithm 1). To compare dataset pairs, we Algorithm 2, and theM
+cls−ds
+model generated by the previous build phase.
+ALGORITHM 2:Dataset level Matching
+Input:Dataset-level proximity metrics for each pair of datasets{D
+y
+, D
+z
+}, the modelM
+cls−ds
+Output:The setSPof similarity score [D
+y
+, D
+z
+, Sim(D
+y
+, D
+z
+)] for each pair of{D
+y
+, D
+z
+}
+SP←∅;
+foreach{D
+y
+, D
+z
+}⊂DLandi6=jdo
+Sim(D
+y
+, D
+z
+) =M
+cls−ds
+(D
+y
+, D
+z
+);
+SP←SP∪{[D
+y
+, D
+z
+, Sim(D
+y
+, D
+z
+)]};
+end
+Pairs
+of DS
+Data
+Lake
+Dataset-level Classification Model
+M
+cls_ds
+Assign Proximity classifier's score
+Sim(D
+y
+,D
+z
+)
+Aggregate -
+level proximity to
+dataset-level
+Agg
+DS Pairs
+Testing
+Sample
+Filter negative pairs of datasets
+-level Classification Model
+M
+cls_num_attr
+M
+cls_nom_attr
+NO
+YES
+Check pass
+threshold C
+d
+?
+Evaluate Dataset-level
+Pruning
+Rel(D
+y
+,D
+z
+)
+Pass positive pairs
+of datasets
+Sample
+OML02
+Apply -level
+Proximity Model
+Compute Dataset level
+meta-feature proximity
+metrics
+P
+m
+-level
+profiling
+Dataset-level
+profiling
+Compute level
+meta-feature proximity
+metrics
+P
+m
+Fig. 8: An overview of the process toapplythe learnt supervised models in our for pre-filtering previously unseen dataset pairs independent of the
+build process.
+In theapplyphase visualised in Fig. 8, we take the pairs of datasets from
+sample OML02 which have not been in the build phase and we compute
+the proximity metrics for the dataset level and level meta-features.
+First, we profile the level meta-features from this dataset pairs
+sample. Then, we apply the level supervised models resulting from the
+previous sub-process to score the pairs similarities from the different
+dataset pairs. Then, we aggregate the resulting pairs similarities to
+the dataset level the aggregation functions. Once we have the dataset level
+proximity metrics generated from dataset level and levelmeta-features,
+we feed them all to the dataset level supervised models from the build phase to
+unseen testing set pairs, not in the training of the models, which assigns a
+proximity score to the pairs. If a pair exceeds a certain proximity threshold, we
+consider that pair as a positive match to propose for further schema matching,
+otherwise the pair is considered as a negative match and is pruned out from Proximity Mining for Pre-filtering Schema Matching19
+further schema matching tasks (we evaluate this by pruning effectiveness metrics
+in 5.2). This is described in the next subsection.
+4.3 Pre-filtering Dataset Pairs for Schema Matching
+For the final step of pre-filtering pairs of datasets before applying detailed
+instance- schema matching, we check whether the pairs of datasets are
+overall related or not, and therefore whether they should be filteredout or pro-
+posed for expensive schema matching. We analyses the finalSim(D
+y
+, D
+z
+) score
+generated by the modelM
+cls−ds
+for each dataset pair in the DL to decide whether
+they satisfy theRel(D
+y
+, D
+z
+) or not. We consider the relationship of each dataset
+with each of the other datasets existing in the DL. Each dataset must passthe
+similarity thresholdc
+d
+with each individual dataset to be proposed for detailed
+schema matching (as in Equation 1).
+If we choose a high cut-off threshold we restrict the supervised model to re-
+turn less pairs of high proximity, leading to lower recall but also less comparisons,
+thus helping to reduce the computational time at the expense of possibly miss-
+ing some misclassified pairs. Alternatively, if we choose a lower cut-off threshold,
+we relax our model to return pairs of lower proximity. This leads tomore pairs
+(i.e., more work for further schema matching tasks) yielding positive matches
+and higher recall of positive cases, but, with more pairs marked incorrectly as
+matching. We propose how to select an appropriate threshold that optimises this
+trade-off empirically in 5.
+The complexity of our is quadratic in the of objects (at-
+tributes or datasets) compared, and therefore runs in polynomial time,however,
+it applies the cheapest computational steps for early-pruning (justcomputing
+distances in Equations 3 and 4 and applying the model to score each pair). This
+way, we save unnecessary expensive schema matching processing per each value
+instance of the attributes in later steps, reducing the computational workload
+at the detailed granularity schema matching level by pre-filteringthe matching
+tasks. We demonstrate this empirically in 5.5.
+5 Experimental Evaluation
+In this , we present the experiments which evaluate our by a prototype implementation. We evaluate the following components of our in predictingRel(D
+y
+, D
+z
+) for pre-filtering schema matching:
+– Proximity metrics:we evaluate the different individual dataset level and
+aggregated level meta-features.
+– Supervised models:we also evaluate the ensemble supervised models,
+which consume the proximity metrics, in the pre-filtering task.
+In addition, we evaluate the sub-components of our which in-
+clude the level modelsM
+cls−nom−attr
+andM
+cls−num−attr
+in predicting 20A. Alserafi .
+Rel(A
+i
+, A
+j
+). We test the level model in experiment 1, the dataset level
+pruning effectiveness against the ground-truth in experiment 2, andthe compu-
+tational performance in experiment 3.
+In experiments 2 and 3, we compare the performance of our proposed prox-
+imity mining models against traditional instance- schema matching tech-
+niques. Those are the most expensive techniques which compare values from
+instances in the datasets to for computing schema similarity. We benchmark
+our results against a na ̈ıve averaging of similarity from a prototype
+called Probabilistic Alignment of Relations, Instances, and Schema (PARIS),
+which is one of the most cited schema matching tools [33]. PARIS was found
+to be best performing with large datasets when compared against other tools
+[19] and does not need collection of extra metadata (see Table 1). PARIS does
+exact value-string matching on value-frequency inverse functionality [33].
+We implement a prototype [4] which compares pairs of attributes from differ-
+ent datasets PARIS and generates an overall score forSim(D
+y
+, D
+z
+) by
+averagingSim(A
+i
+, A
+j
+) generated by PARIS from the top-matching -
+pairs (similar to Algorithm 1, where PARIS replaces the supervised models). It
+converts tabular datasets to RDF triples, and executes a probabilistic match-
+ing algorithm for identifying overlapping instances and attributes. We selected
+PARIS because of its simplicity and ease of integration with Java- APIs
+and its high performance in previous research [19]. We parametrised thepro-
+totype with the top performing settings from experiments in [4] sampling 700
+instances per dataset, 10 iterations comparisons, with identity and shingling
+value strings matching. This will be a baseline pre-filtering heuristic we shall compare against in the experiments.
+The rest of this describes the datasets in the experiments, the
+evaluation metrics and the different experiments implemented. We present
+the results from our experiments and discuss their implications.
+5.1 Datasets
+We the OpenML DL
+5
+in our experiments [36], which has more than 20,000
+datasets intended for analytics from different subject areas. OpenMLis a web- data repository that allows data scientists to upload different datasets,
+which can be in data mining experiments. OpenML stores datasets in the
+ARFF tabular format which consist of diverse raw data loaded without any
+specific integration schema. This allows us to evaluate our in a -life
+setting where datasets come from heterogeneous domains.
+We two subsets of manually annotated datasets from OpenML as our
+ground-truth (gold standard) for our experiments. Those two subsets have been
+generated two different independent processes, and therefore provide in-
+dependently generated ground truths that do not overlap. As the research com-
+munity is lacking appropriate benchmarking gold standards for approximate
+(non-equijoins) dataset and similarity search [23], we published those
+5
+https://www.openml.org Proximity Mining for Pre-filtering Schema Matching21
+datasets online to support in future benchmarking tasks
+6
+. The experimental
+datasets are described as follows:
+– OML01 - The level annotated 15 DS:consists of 15 datasets
+from different domains as described in Table 4. The total of at-
+tributes is 126 (61 nominal and 65 numeric), and the average of
+attributes per dataset is 8. There is a total of 3468 pairs of attributes to be
+matched (1575 nominal pairs and 1892 numeric pairs). All the pairs of at-
+tributes in this subset were manually scrutinised by 5 annotatorsconsisting
+of post-graduates with an average age of 28, where 4 are pharmacists and 1
+is a computer scientist. They checked the attributes in the datasets and an-
+notated all the pairs of attributes from different datasets with relateddata,
+Rel(A
+i
+, A
+j
+). It took on average 3 hours by each annotator to complete the
+task. Annotators assign a single value from{0,1}, where ‘1’ means a related
+, and the majority vote is taken for each pair, where the average
+Kappa coefficient for the inter-rater agreement is 0.59, the maximum is 0.80
+and the minimum 0.37. Annotators were given the following to judge if the pair is related: name, OpenML dataset description, top
+10 values, and the mean and standard deviation for numeric attributes. We
+didn’t give instructions on how to the provided information to judge,
+but we described that “related attributes should store data related to sim-
+ilar -world properties, e.g., car prices, specific body size measurements height, etc., and should contain similar data”. Examples of the anno-
+tations can be seen in Table 5. There are only 56 positively matching pairs
+(19 nominal and 37 numeric). This subset is in training the level models for computing the similarity between attributes from different
+datasets and predicting related attributes,Rel(A
+i
+, A
+j
+).
+Table 4: Description of the OML01 datasets
+DomainDatasets IDsDatasets
+Vehicles21,455,967,1092car,cars,cars,Crash
+Business223,549,841Stock,strikes,stock
+Sports214baskball
+Health13,15,37breast-cancer,breast-w,diabetes
+Others48,50,61,969tae,tic-tac-toe,Iris,Iris
+Table 5: Example Cross-dataset Relationships from OML01
+No.Dataset 1Dataset 2Attribute 1Attribute 2Relationship
+137 (diabetes)214 (baskball)ageagerelated
+2455 (cars)549 (strikes)model.yearyearrelated
+3455 (cars)967 (cars)allallduplicate
+4455 (cars)1092 (Crash)namemodelrelated
+5455 (cars)1092 (Crash)weightWtrelated
+6
+https://github.com/AymanUPC/all
+proxopenml 22A. Alserafi .
+– OML02 - The dataset level annotated 203 DS:consists of 203 datasets
+different from those in the OML01 subset. To collect this sample, we scraped
+the OpenML repository to extract all datasets not included in the OML01
+sample and having a description of more than 500 characters. Out of the 514
+datasets retrieved, we selected 203 with meaningful descriptions (i.e., exclud-
+ing datasets whose descriptions do not allow to interpret the content and to
+assign a topic). The datasets have a total of 10,971 attributes (2,834 nomi-
+nal, 8,137 numeric). There are 19,931 pairs of datasets with about 35 million pairs to match. According to Algorithm 1, there are 3.7 million
+comparisons for nominal attributes (leading to 59,570 top matching pairs)
+and 31.5 million numeric pairs (leading to 167,882 top matching
+pairs). We try to prevent the value- schema matching on all possible
+pairs of values between datasets, where there are 216,330 values which would
+lead to 23.4 billion comparisons at the value level. A domain expert with a
+background in pharmaceutical studies and one of the authors collaborated
+to manually label the datasets
+7
+. They the textual descriptions of the
+datasets to extract their topics, which is common experimental practice in
+dataset matching assessment, similar to the experimental setup in[6]. The
+annotators sat together in the same room and discussed each dataset with
+its description and decided on its appropriate -life subject-area (e.g., car
+engines, computer hardware, etc.). To group similar datasets in the same
+subject-area grouping, annotators had to discuss and agree together on a
+single annotation to give to a dataset. This was done by discussing the
+specific -world concept which the dataset describes, e.g., “animal pro-
+files”, “motion sensing”, etc. The annotators were only allowed to scrutinise
+the textual descriptions of the datasets and did not receive the underlying
+data stored in their attributes to prevent any bias towards our proposed
+algorithms. It took the annotators about 15 hours in total to annotate the
+datasets. Pairs of datasets falling under the same subject-area were positively
+annotated forRel(D
+y
+, D
+z
+). The sample consists of 543 positive pairs from
+the 20,503 total of pairs. The details of the sample is summarised
+in Table 6, which lists the of datasets, the of topics, top
+topics by the of datasets, and the of related pairs. Some of
+the pairs from the sample can be seen in Table 7. We can see, for example,
+that dataset with ID 23 should match all datasets falling under the topic of
+‘census data’ dataset 179. Both datasets have data about citizens from
+a population census. In row 4, we can see an example of duplicated datasets
+having highly intersecting data in their attributes. Duplicatepairs those
+in row 4 have the same of instances, but described with different of attributes, which are overlapping. We consider all duplicate pairs
+of datasets as related pairs. We aim to detect and recommend such kind
+7
+Those dataset annotations were reviewed by 5 independent judges, and the results
+of this validation are published online at:
+https://github.com/AymanUPC/all
+proxopenml/blob/master/OML02/oml02revalidationresults.pdf Proximity Mining for Pre-filtering Schema Matching23
+of similar dataset pairs as those in Table 7 for schema matching our
+proximity mining .
+Table 6: Description of the OML02 datasets
+DatasetsTopicsTop TopicsRel(D
+y
+,D
+z
+)
+20374computer software defects (16), health
+measurements (13), digit handwriting
+recognition (12), robot motion sensing
+(11), plant and fungi measurements (9),
+citizens census data (8), diseases (8)
+543
+Table 7: An example of pairs of datasets from the OML02 sample from OpenML
+No.DID 1Dataset 1DID 2Dataset 2TopicRelationship
+123cmc179adultCensus Datarelated
+214mfeat-fourier1038ginaagnosticDigit Handwriting Recognitionrelated
+355hepatitis171primary-tumorDiseaserelated
+4189kin8nm308puma32HRobot Motion Sensingduplicate
+5.2 Evaluation Metrics
+We different evaluation metrics to assess the effectiveness of our .
+We the traditional recommendation and information retrieval evaluation
+metrics similar to other research [15,22], including precision, recall and ROC
+measurements. For the supervised models, we traditional data mining clas-
+sification effectiveness metrics [34]. We evaluate the computational costs of our vs. traditional schema matching for baseline comparison. Those metrics
+are categorised per the experiment types and granularities:
+–Classification effectiveness
+•Granularity: levelRel(A
+i
+, A
+j
+) and Dataset levelRel(D
+y
+, D
+z
+)
+•Models evaluated:M
+cls−nom−attr
+,M
+cls−num−attr
+,M
+cls−ds
+•Classification measures: Classification accuracy, Recall, Precision, ROC,
+Kappa
+–Pre-filtering (pruning) effectiveness
+•Granularity: Dataset levelRel(D
+y
+, D
+z
+)
+•Model evaluated:M
+cls−ds
+,P ARIS
+•Retrieval measures: Recall, Precision, Efficiency Gain, Lift Score
+–Computational performance
+•Granularity: levelRel(A
+i
+, A
+j
+) and Dataset levelRel(D
+y
+, D
+z
+)
+•Model evaluated:M
+cls−nom−attr
+,M
+cls−num−attr
+,M
+cls−ds
+,P ARIS
+•Computational measures: computational processing time (milliseconds),
+metadata size (megabytes) 24A. Alserafi .
+Table 8: The significance of the
+Kappa statistic
+KappaSignificance
+<0Disagreement
+0.0 - 0.10No significance
+0.0 - 0.20Slight
+0.21 - 0.40Fair
+0.41 - 0.60Moderate
+0.61 - 0.80High
+0.81 - 1.0Excellent
+Table 9: The significance of the ROC
+statistic
+ROCSignificance
+<0.5Disagreement
+0.5 - 0.6No significance
+0.6 - 0.7Slight
+0.7 - 0.8Moderate
+0.8 - 0.9High
+0.9 - 1.0Excellent
+For the classification effectiveness measures, the classification accuracy is
+given in our results as a percentage. The recall and precision rate are also per-
+centages. For the ROC (area under the curve) and Kappa statistic, they are
+a value between 0 and 1, where the value significance is evaluated inour
+results according to Tables 8-9.
+For the pruning effectiveness measures, we evaluate our the
+measurements described in Equations (8),(9), (10) and (11). Here, TP means
+true-positives which are the pairs of datasets correctly classified by the models.
+FN are false negatives, FP are false-positives, TN are true-negatives,and N
+indicates the total of possible pairs of datasets (which is a sumof all pairs
+TP + FP + TN + FN). The efficiency gain measures the amount of reduction in
+work required, in terms of of pairs of datasets eliminated by ourmodels.
+The lift score measures the capability of the model in filtering out more pairs
+than randomly removing pairs for the recall rate achieved. A higher amount is
+better, where a value of 3.0 would mean that the model is capable of retrieving
+3 times more positive pairs than the expected amount of positive pairs from a
+random sample without the model.
+recall=
+T P
+T P+F N
+(8)precision=
+T P
+T P+F P
+(9)
+efficiency-gain=
+T N+F N
+N
+(10)
+lift-score=
+recall
+(1.0−efficiency-gain)
+(11)
+5.3 Experiment 1: -level Models
+Our goal in this experiment is to evaluate the supervised models webuild for
+detecting the relationship between related attributesRel(A
+i
+, A
+j
+) level content meta-features as follows:
+– Dataset: OML01
+– Evaluation metrics: Classification effectiveness
+– Relationship evaluated:Rel(A
+i
+, A
+j
+)
+– Input: the level meta-features matching for pairs of attributes.
+– Output: a supervised model to predict related attributes per type.
+– Goal: select the most appropriate models for predicting related attributes
+by evaluating their effectiveness for each type (nominal or numerical). Proximity Mining for Pre-filtering Schema Matching25
+– Description: we take two subsets of pairs and their meta-features,
+depending on the type: nominal attributes and numeric attributes.
+The subsets are annotated by a human to decide whetherRel(A
+i
+, A
+j
+) is 1
+or 0. We build a proximity model a supervised learning algorithm.
+Experimental Setupwe evaluate the model the leave-one-out (where we exclude one pair from training in each run, and it to test the
+output model, therefore having a cross-validation where the of folds is
+equal to the of pairs). As the of positive pairs to negative pairs
+are imbalanced, we create a balanced training set for each type, nominal ornu-
+meric, which consists of all the positive pairs of matches and an equal of negative unmatching pairs. To make the training set representative
+of all the different negative cases, we cluster the negative cases the Expec-
+tation Maximisation (EM) algorithm [34] and we select a representative sample
+of negative cases from each cluster.
+ResultsThe level models were evaluated for both nominal pairs and numeric pairs. We evaluate theM
+cls−nom−attr
+andM
+cls−num−attr
+models which assign theSim(A
+i
+, A
+j
+) for pairs. As could be seen in Ta-
+ble 10, we created two supervised models; one for each type of pairs.
+Both models achieved excellent ROC performance and highly significant results
+on the Kappa statistic (see Tables 8-9 results significance). The models had
+good accuracy, recall, and precision rates. This is important because the dataset
+pairs pre-filtering step depends on this proximity step, so we have to
+achieve a good performance at this level to minimise accumulation of errors for
+the following tasks.
+Table 10: Performance evaluation of pairs proximity models
+ModelROCKappaAccuracyPositive RecallPositive Precision
+Nominal0.9570.6582.5%89.5%77.3%
+Numeric0.9150.784.8%89.2%80.5%
+5.4 Experiment 2: Dataset-level Models
+In this experiment, we evaluate the effectiveness of the dataset level models in
+pre-filtering dataset pairs for further schema matching. Our goal is toevaluate
+how good is our in retrieving related datasetsRel(D
+y
+, D
+z
+) and filter-
+ing out unrelated datasets from the schema matching process. We evaluate the
+effectiveness of correctly proposing related datasets for schema matching the different types of models we describe later in this . The evaluation is
+as follows:
+– Dataset: OML02 26A. Alserafi .
+– Evaluation metrics: Classification effectiveness, Pre-filtering effectiveness
+– Relationship evaluated:Rel(D
+y
+, D
+z
+)
+– Input: Pairs of datasets with different types of meta-features matching
+[dataset level names, dataset level content meta-features, level
+names, level meta-features, all meta-features].
+– Output: a supervised modelM
+cls−ds
+to predict related datasets on
+proximity mining and PARIS baseline.
+– Goal: select the best proximity model to predict related datasets andthe
+proximity thresholdc
+d
+to with that model.
+– Description: we take annotated pairs of datasets and their meta-features’
+normalised metrics. The pairs are annotated by a human annotator to decide
+whetherRel(D
+y
+, D
+z
+) is 1 or 0. We build a proximity model a supervised
+learning algorithm.
+We create different types of dataset pairs ensemble models to scoreSim(D
+y
+, D
+z
+)
+by different combination of meta-feature types. We create different models
+depending on the meta-feature type(s) as input (namely those are dataset
+content meta-features, dataset name similarity, content meta-features,
+and name similarity). We can combine the meta-feature types to
+build the model or each type separately to lead to the following model types
+depending on which meta-features are :
+– DS-Prox-Content:uses the dataset level content meta-features, without
+considering the dataset name distance.
+– DS-Prox-Name:uses the dataset name Levenshtein distance as the only
+predictor of dataset pairs similarity.
+– -Prox-Content:uses the level content meta-features,
+not considering the name meta-features.
+– -Prox-Name:uses the level name meta-features only,
+not considering the content meta-features.
+– Name-Prox:uses dataset level and level name- meta-features
+only.
+– Content-Prox:uses dataset level and level content- meta-
+features only.
+– All-Prox:uses all the dataset level and level meta-features, in-
+cluding both name- and content- meta-features.
+We differentiate between the meta-feature types in our experiments so we can
+test if a specific subset of meta-features is better in predictingRel(D
+y
+, D
+z
+) or
+whether it is necessary to all of them together to build an effective proximity
+mining model for the pre-filtering task. We also investigate if there is a difference
+in performance with regards to the types of meta-features extracted:classical
+name- meta-features vs. the newly proposed content- meta-features,
+and whether both types together in combination leads to better results.
+We also separate the types so we can distinguish if purely content- meta-
+features can be as an alternative to name- meta-features, especially in
+the case when the datasets and their attributes are not properly named.The most Proximity Mining for Pre-filtering Schema Matching27
+comprehensive of all models is theAll-P roxmodel which uses all the possible
+meta-features we collect from the data profiling step. TheDS-P rox-N ameis
+the most generic of all models as it just considers a single meta-feature at the
+most abstract-level, therefore it will be as our baseline for our performance
+comparisons in the experiments.
+Experimental SetupTo evaluate our and models, we consider in our
+experiments a 10-fold cross-validation experimental setup different subsets
+of datasets from a -world DL. The purpose of a cross-validation setup isto
+select the best supervised model for the pre-filtering task by evaluating the
+different models on test-sets separate from the training-sets, which is commonly in recommendation assessment experiments [2,15] and schema matching
+tasks [10]. Such an experimental setup increases the validity and generalisability
+of our experiments and . This is only achieved if the training set is
+representative of the cases found in the -life population.
+We make sure that the folds do not include intersecting dataset pairs. We
+create a balanced training set with all the positive cases and an equal of
+negative cases similar to experiment 1. As the of negative cases is much
+higher in the OML02 subset too, we also follow the clustering of negative cases to select a representative sample from each cluster (see 5.3).
+We iterate 10 times an alternating fold as the test set, and the remain-
+ing folds as the training set. We evaluate the models in accurately predicting
+Rel(D
+y
+, D
+z
+) with 9 different cut-off thresholds in [0.1-0.9] for ‘c
+d
+’ from Equation
+(1) in order to cover a wide range of values. Finally, we evaluate the performance
+of each model by averaging the evaluation metrics from all 10 iterations. We also
+compute standard deviations in performance between different folds to evaluate
+the stability and consistency of the models evaluated. For the PARIS baseline
+implementation, it does not need to train any models, so we simply run it on all
+pairs of datasets and compare its results to our .
+Results Classification effectiveness.First, we created the models for the
+dataset pairs which assignSim(D
+y
+, D
+z
+) and check if they satisfyRel(D
+y
+, D
+z
+)
+by passing the minimum threshold. We evaluated the classification effectiveness
+measures for each proximity model after the 10-fold cross-validation. The re-
+sults are summarised in Figures 9-11. The figures show a plot of results (from
+10 folds) and interquartile ranges of accuracy, kappa statistic and ROC statistic
+for each model type. The distribution between folds can also be seento assess
+the stability of the models. For our comparison, we the name- models,
+which are common in previous research, as our baseline comparison. As could
+be seen, all models were stable with very close values for the different evaluation
+metrics, indicating the versatility of our . However, stillthe All-Prox
+and -Prox models consistently had slightly better stability (lower devi-
+ations) than Name-Prox and other models. It can be seen from the resultsthat
+the All-Prox and -Prox models are consistently performing better than
+the name- model in terms of accuracy, ROC and Kappa statistic. This indi- 28A. Alserafi .
+cates that our proposed content- and name- combined meta-features
+models perform best with schema matching pre-filtering.
+Model Type 71 72 73 74 75 76 77 78 79 80 81 82 Classification Accuracy All-Prox -Prox Name-Prox Content-Prox DS-Prox 78.18 75.51 74.29 73.72 73.29 Fig. 9: Classification accuracy from 10-
+fold cross-validation of dataset pairs
+pre-filtering models.
+Model Type 0.44 0.46 0.48 0.50 0.52 0.54 0.56 0.58 0.60 0.62 Kappa Statistic All-Prox -Prox Name-Prox Content-Prox DS-Prox 0.56 0.51 0.49 0.47 0.47 Fig. 10: Kappa statistic from 10-fold
+cross-validation of dataset pairs pre-
+filtering models.
+Model Type 0.80 0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 Roc Score All-Prox -Prox Name-Prox Content-Prox DS-Prox 0.86 0.83 0.81 0.81 0.81 Fig. 11: ROC statistic from 10-fold
+cross-validation of dataset pairs pre-
+filtering models.
+The different models for the schema matching pre-filteringtask achieve
+different results because the meta-features in the different models are not
+correlated, therefore contain different information about the datasets leading
+to the different performance of each model. We evaluated the Spearman rank
+correlation [15] between the different types of meta-features, whichis presented
+in Table 11. The Spearman rank correlation ranks the dataset pairs according
+to the proximity metrics of the meta-features. If the dataset pairshave the same
+identical rankings between two different meta-features then we geta perfect
+correlation. If the rankings produced in descending order by the two proximity
+metrics are different (e.g., a dataset pair can be ranked in the 100th position by
+one meta-feature and in the 9th position by the other, which have a difference
+of 81 ranks) then we get a lower correlation, with completely uncorrelated meta-
+features. We evaluated the average, standard deviation, minimum, and maximum
+of the correlation between the meta-features falling under the different types
+of meta-features. Recall that each type will have multiple meta-features (see 4.1), content will include all the meta-features in Table 3
+with all their different proximity metrics according to the aggregations described
+in 4.2. We calculate the correlation between each individual meta-feature
+pair and we calculate aggregates per type. As can be seen in Table 11, all the
+correlation values are low. Proximity Mining for Pre-filtering Schema Matching29
+Table 11: Spearman rank correlation for the different meta-features. We aggre-
+gate minimum (Min.), average (Avg.), maximum (Max.), & standard deviation
+(Std. Dev.) for different meta-feature types.
+Type 1Type 2Min. CorrelationAvg. CorrelationMax. CorrelationStd. Dev. Correlation NameAttribute Content-0.12-0.010.190.04 NameDataset Content0.020.040.100.02 NameDataset Name0.060.070.130.02
+Dataset ContentAttribute Content-0.010.090.150.04
+Dataset ContentDataset Name-0.020.000.020.02
+Dataset NameAttribute Content0.000.010.040.01
+0 10 20 30 40 50 60 70 80 90 100 Avg. Recall 0 10 20 30 40 50 60 70 80 90 100 Avg. Efficiency Gain 3.1 2.3 2.9 5.6 1.7 1.9 2.4 4.5 1.6 10.8 3.3 1.3 1.2 4.5 24.6 4.9 5.5 7.6 14.8 1.3 DS-Prox Name-Prox Content-Prox -Prox All-Prox Baseline Fig. 12: Recall against efficiency gain
+for the different supervised models.
+0 10 20 30 40 50 60 70 80 90 100 Avg. Recall 0 10 20 30 40 50 60 70 80 90 100 Avg. Precision 10.8 5.6 4.5 14.3 24.6 7.6 73.8 3.1 3.4 2.1 1.9 29.8 3.3 14.8 2.4 5.5 1.7 4.9 4.5 1.3 All-Prox -Prox Content-Prox Name-Prox DS-Prox Baseline Fig. 13: Recall against precision for the
+different supervised models.
+0 10 20 30 40 50 60 70 80 90 100 Avg. Recall 0 10 20 30 40 50 60 70 80 90 100 Avg. Efficiency Gain 1.57 1.84 2.21 2.77 3.19 3.73 4.02 1.21 1.01 1.07 1.11 1.26 1.40 1.64 1.80 2.15 3.37 8.19 1.26 1.69 1.95 2.36 7.06 6.71 1.27 9.38 29.14 38.28 Sheet 4 A tt r i b u te- N a m e - P r o x A tt r i b te - C o n t e n t D S - C o n t e n t D S - N a m e Average of Recall vs. average of Efficiency Gain. Color shows details about Sim Measure Grouped. Shape shows details about Sim Measure Grouped. The marks are labeled by average of Lift Score. Details are shown for Threshold. The data is filtered on Eval Type and Sim Measure. The Eval Type filter keeps
+entity. The Sim Measure filter has multiple members selected. Fig. 14: Recall against efficiency gain
+for the different metric types.
+0 10 20 30 40 50 60 70 80 90 100 Avg. Recall 0 10 20 30 40 50 60 70 80 90 100 Avg. Precision 3.19 4.02 6.57 1.11 1.01 1.21 3.37 8.19 14.26 22.11 6.63 8.81 12.69 15.54 17.06 18.40 10.41 11.68 1.69 14.96 1.95 2.36 2.74 6.71 8.70 23.93 29.14 32.37 32.51 34.23 35.03 38.28 Sheet 5 Name Prox -Content DS-Content
+DS-Name
+Average of Recall vs. average of Precision. Color shows details about Sim Measure Grouped. Shape shows details about Sim Measure Grouped. The marks are labeled by average of Lift Score. Details are shown for Threshold. The data is filtered on Eval Type and Sim Measure. The Eval Type filter keeps entity. The Sim Measure filter has multiple members selected. Fig. 15: Recall against precision for the
+different metric types. 30A. Alserafi .
+Pre-filtering effectiveness.We compare the effectiveness of our against the baseline implementation of PARIS. We change the cut-off thresholds
+for Equation 1, and we aim to maximize the efficiency-gain while maintaining
+the highest recall for all candidate dataset pairs satisfyingRel(D
+y
+, D
+z
+). The ef-
+fectiveness is also evaluated by lift scores. The results from our and
+from the‘baseline’PARIS prototype are presented in Figures 12-15. Figures 12-
+13 show the results for the different supervised models and PARIS,and Figures
+14-15 show the results of the same evaluation metrics but for the individual meta-
+features in our , where we the individual proximity metrics of the
+meta-features directly as an indicator ofRel(D
+y
+, D
+z
+) without any super-
+vised learning models. We evaluate the dataset level meta-featuresfrom 4.1. The graphs show the average performance for all the individual metrics per
+specific type. We a different minimum threshold with each proximity model
+or meta-feature in Figures 12-15 leading to the different plotted results per model
+or meta-feature. The aim of comparing both models and individual metrics is
+to be able to detect if the proposed supervised proximity modelsperform any
+better than simply single independent metrics for the pre-filtering task.
+For each evaluation of the models or the individual metrics, we evaluatethe
+efficiency gain against recall first. We set a minimum target recall of 80% and
+a minimum target efficiency gain of 60% (i.e., filtering out at least 60% of the
+pairs of datasets while still proposing 80% of the true positive pairs), which are
+the grey shaded areas in the graphs. The minimum thresholds can be selected
+differently according to the requirements of the data analyst. Goodperforming
+models or proximity metrics are those that fall in this shaded area. The numbers
+annotated to some of the points in the graphs indicate the lift score (higher values
+are better). Similarly, we compare the precision against the recall inthe second
+graphs for each evaluation (models or metrics). We also annotate some selected
+lift scores for some points in the graph.
+When comparing our proposed proximity models with the proximity
+model (DS-Prox) from our previous work [5], it can be seen that our -
+Prox model and the All-Prox model perform consistently better. This is expected
+because we are collecting finer granularity metadata to describe the datasets
+which makes it easier in the supervised learning task to differentiate between
+positive pairs and negative pairs. Although our proposed techniques out-
+perform our previous work in the DS-Prox model in terms of recall rates and lift
+scores, it comes at the price of a more computationally expensive algorithm (-
+gorithm 1). The complexity of the dataset level Algorithm 2 isO([n∗(n−1)]/2)
+while the complexity of the level Algorithm 1 isO([n∗(n−1)∗a
+2
+]/2)
+where ‘n’ is the of datasets and ‘a’ is the of attributes in each
+dataset (we can the average of attributes per dataset as an approx-
+imation for ‘a’ when estimating the of computations required).
+If we would compare the content meta-features only model (Content-Prox)
+with the name meta-features only model (Name-Prox), we would see thatboth
+models perform equally the same in the pre-filtering task, although combining
+them in the All-prox model leads to the best results capturing the similarity of Proximity Mining for Pre-filtering Schema Matching31
+difficult pairs that can not be retrieved by any single type individually. There-
+fore, it is possible to solely depend on content- proximity models as a
+replacement of name- proximity models to achieve similar results. This
+will be important in the cases of DLs which are not well maintained and do
+not have properly named datasets and attributes. We investigate in detail the
+performance of the All-Prox proximity model on its true positives, false
+positives and false negative pairs in the Appendix
+8
+, where we present the exact
+cases, we discuss the reasons of discrepancies and we give a comparativeanalysis
+of the underlying proximity metrics which led to those cases.
+For each of the pruning effectiveness evaluation metrics listed above, we com-
+pute the average and standard deviation of the measure between the different
+folds of evaluation for our . The average is plotted in the graphs in
+Figures 12-15, and the standard deviations of each model for the threshold 0.5
+(we chose the mean threshold) are given in Table 12. The standard deviation
+indicates the stability of our proposed metrics and models with different subsets
+of datasets. We aim for a low standard deviation to prove the high adaptability
+of our .
+Table 12: The standard deviation of each evaluation measure for 10-fold cross-
+validation of each dataset pairs pre-filtering model, wherec
+d
+= 0.5
+ProximitySD RecallSD Efficiency GainSD PrecisionSD Lift Score
+All-Prox5.40.610.580.32
+-Prox6.51.00.70.24
+Content-Prox6.81.00.380.35
+DS-Prox7.860.850.290.28
+Name-Prox6.31.10.470.24
+Dataset Pairs Pre-filtering Meta-featuresFirst, we assess if the super-
+vised learning models perform better than a simpler onthe
+sub-components they are dependant on, which are the individual meta-features in the models. The supervised models multiple features in combination
+to score the similarity of pairs of datasets. Here, we assess the individual features
+as a baseline to compare against, and whether simply a proximitymetric
+of an individual meta-feature without any models can lead to any good result.
+We aggregated an average for the pruning evaluation metrics per each type of
+meta-feature. The results comparing recall against efficiency gain is given in Fig.
+14. In our experiments, no single meta-feature was able to individually predict
+related pairs of datasets to achieve optimum recall and efficiency gain, as can
+be seen by the lack of any plotted result in the top-right box. As seen in Fig.
+15, the pre-filtering task the meta-features can not have a precision better
+than 10% for the higher recall rates.
+8
+The appendix could be found online at https://aymanupc.github.io/all
+proxopenml 32A. Alserafi .
+We note here that the different types of meta-features are able to model
+different information about the datasets and their attributes as seen bythe
+low correlations in Table 11. That is the main reason we the combination
+of different types of meta-features in our proximity models which are able to
+combine the meta-features to give better results.
+Dataset Pairs Pre-filtering Efficiency Gain Vs. RecallWe also eval-
+uated the different supervised proximity models by testing their pre-filtering
+performance with different proximity thresholds. As can be seen inFig. 12,
+all of the proximity models were able to optimise recall and efficiency gain to
+achieve results in the top-right shaded area, compared to the baselinePARIS
+implementation that was not successful. This shows the value of approximate
+proximity matching and the supervised models in our compared to
+exact instance- string matching in the baseline. The best performing mod-
+els were the All-Prox and -Prox models which achievedbetter results
+than DS-Prox from our previous work [5] and better results than Name-Prox
+which are more common in other previous research. This means that combining
+both name- meta-features and content- meta-feature in a supervised
+model achieves best results in the schema matching pre-filtering task. For ex-
+ample, a good result can be achieved the All-Prox model (combining all
+meta-feature types) with a threshold of 0.4 which achieves a recall rate of 85%,
+an efficiency gain of 73% and a lift score of 3.14. This means that the model
+is able to effectively propose most of the pairs of datasets for schema matching
+with the least effort possible (only proposing 27% of pairs for comparison), while
+achieving this with a performance that is three times better than naive random
+selection of dataset pairs for schema matching (as expressed by the lift score of
+3.14 achieved by the All-Prox model).
+Dataset Pairs Pre-filtering Precision Vs. RecallAs seen in Fig. 13, the
+precision of the proximity models improved the performance of theschema
+matching pre-filtering as seen by the higher precision rates compared to the
+individual meta-features in Fig. 15. By combining the meta-features in a su-
+pervised model we were able to achieve higher precision rates withthe same
+recall rates, for example, a precision of 17% with a recall rate of 75% the All-Prox model. This is better than the best achievable precision with the
+individual meta-features, which can achieve a precision of 4% with the same
+recall rate for the level meta-feature type. However, we acknowledge
+that the precision rates are low for all types of models and meta-features. We
+can therefore conclude that our proposed proximity mining can only
+be as an initial schema matching pre-filter which is able to prune unneces-
+sary schema matching comparisons from further steps. Our can not be for the final schema matching task because it will produce falsepositives.
+Therefore, dataset pairs should be further scrutinised with more comparisons to
+assess their schema similarity (as seen in Fig. 1 bottom instance- matching Proximity Mining for Pre-filtering Schema Matching33
+layer). Such comparisons instance- matching similar to ourprevious
+work [4].
+5.5 Experiment 3: Computational Performance Evaluation
+In this experiment, we evaluate the computational performance in terms of time
+and storage space consumption as follows:
+– Dataset: OML02
+– Evaluation metrics: Computational performance
+– Relationship evaluated: all
+– Input: All the pairs of datasets from OML02, a model (M
+cls−ds
+) and the
+P ARISschema matching prototype.
+– Output: -level and dataset-level metadata.
+– Goal: test the comparable computational costs of running the different com-
+ponents of our proximity mining vs. traditional instance-
+schema matching techniques. We show the value of pre-filtering by means of
+computational costs saving.
+– Description: we take all the annotated pairs from OML02 and we do a
+complete run which collects the required meta-features and metrics, and we
+run the algorithms to computeSim(D
+y
+, D
+z
+). We measure the amount of
+time and storage space it takes to process the pairs.
+We ran the experiments for our a computer running on Linux
+Debian, 8GB main memory, a dual-core Intel i7 processor running at 2.4GHz
+and 4MB cache, Java v8 for the implementation of our algorithms, and Postgres
+database v9.5.12 for the metadata storage and management. For the PARIS
+baseline implementation, we a server with more resources as recommended
+by the developers. The server runs on Linux Debian, Java v8, 24GB of memory
+and a quad-core processor at 2.4 GhZ and 4MB cache. We present the results
+below.
+ResultsWe compare the computational performance by evaluating the amount
+of time and storage space for running our and the PARIS- im-
+plementation with the DL sample OML02. The results can be seen in Table13.
+We list the tasks from our and compare to the baseline in the last row.
+We compute the time for each task, the average time it takes, and the storage
+space . For the matching, we keep the output in memory and do
+not materialise it. We only materialise top-matching pairs. on the results in Table 13, our needs a total of 112 minutes
+and 100MB storage space for the OML02 DL sample datasets of a total size of
+2.1GB (i.e., 5% metadata space overhead). This is at least 2 orders of magnitude
+less than the time and space consumption of the baseline PARIS implementation.
+The most expensive steps in our were those for the numeric matching
+tasks as they were much greater in amount than nominal attributes. Still, our ap-
+proach is more efficient in terms of computational performance and pre-filtering
+effectiveness as shown by our results. 34A. Alserafi .
+Table 13: The computational performance of our vs. the PARIS im-
+plementation in terms of time and storage space
+TaskTimingAverage TimeStorage Space
+Dataset Profiling263,019ms (4:23 minutes)1,295ms per dataset31.25MB
+Numeric Matching1,184,000ms (19:44 min-
+utes)
+0.04ms per pairIn memory
+Nominal Matching160,000ms (2:40 minutes)0.04ms per pairIn memory
+Numeric Top Matching3,250,000ms (54:10 min-
+utes)
+0.1ms per pair
+208ms per dataset pair
+(15,576 dataset pairs)
+7MB
+Nominal Top Matching313,000ms (5:13 minutes)0.08ms per pair
+19ms per dataset pair
+(16,290 dataset pairs)
+2.33MB
+Dataset-level All Aggregations of At-
+tribute Similarities
+500,000ms (8:20 minutes)25ms per dataset pair
+(19,931 dataset pairs)
+35MB
+Dataset-level Name Matching202ms (0 minutes)0.01ms per dataset pair
+(20,503 pairs)
+Part of Top Matching
+metadata
+Dataset-level Content Matching5,100ms (5.1 seconds)0.25ms per dataset pair
+(20,503 pairs)
+3.25MB
+-level Name Matching, top
+pairs computation, and aggregation
+1,018,663ms (16:58 min-
+utes)
+0.03ms per pair
+(35,283,824 pair)
+51ms per dataset pair
+(19,931 dataset pair)
+12.5MB
+Apply the proximity models on the
+dataset pairs to score their similari-
+ties
+1,665ms (1.66 seconds)0.08ms per dataset pair
+(20,503 dataset pair)
+8.5MB
+PARIS Alignment Implementation743,077,431ms (12,384:37
+minutes)
+36,241ms per dataset pair
+(0:36 minutes per dataset
+pair)
+15,450MB (15.1GB)
+5.6 Generalisability
+In our experiments, we have the OpenML DL to create a 10-fold cross-
+validation experimental setup. OpenML stores datasets representing heteroge-
+neous subject-areas. Thus, we expect our proposed techniques to achieve similar
+results with different heterogeneous DLs. We tested our withdiffer-
+ent heterogeneous DL subsets covering randomly selected subject-areas in each
+cross-validation fold. This further improves the generalisabilityof our results as
+the results achieved proved to be stable between the different cross-validation
+folds. Therefore, our is recommended in the early-pruning and schema
+matching pre-filtering task in a DL environment with heterogeneoussubject-
+areas. Under different settings, the data scientist should first test the perfor-
+mance of our on a test sample and then select the best performing
+cut-off thresholds accordingly. It is also crucial that the training samples se-
+lected for creating the supervised models are representative of the specific DL
+setting they are for. We also note, that although our experiments were done
+over binary approximation for theRel(D
+y
+, D
+z
+) in the ground truth due
+to the difficulty to find a ground truth with a similarity continuum,still our ap-
+proach can be useful in dataset pairs ranking problems theSim(D
+y
+, D
+z
+)
+continuous .
+6 Conclusion
+We have presented in this paper a novel for pre-filtering schema match-
+ing metadata- proximity mining algorithms. The isable to Proximity Mining for Pre-filtering Schema Matching35
+detect related dataset pairs containing similar data by analysing their meta-
+data and a supervised learning model to compute their proximity score.
+Those pairs exceeding a minimum threshold are proposed for more detailed, more
+expensive schema matching at the value- granularity-level. Our was found to be highly effective in this early-pruning task, whereby dissimilar
+datasets were effectively filtered out and datasets with similar data were effec-
+tively detected in a -life DL setting. Our achieves high lift scores
+and efficiency gain in the pre-filtering task, while maintaining a highrecall rate.
+For future research, we will investigate the different techniques to improve the
+scalability of our by improving level matching selectivity. We
+also want to investigate the possibility of detailed semantic schemamatching at
+the level. We will also investigate our proximity mining in
+effectively clustering the datasets into meaningful groupings of similarity.
+Acknowledgement.This research has been partially funded by the European
+Commission through the Erasmus Mundus Joint Doctorate (IT4BI-DC).
+References
+1. Abedjan, Z., Golab, L., Naumann, F.: Profiling relational data: a survey. The
+VLDB Journal24(4), 557–581 (2015). https://doi.org/10.1007/s00778-015-0389-
+y,
+2. Adomavicius, G., Sankaranarayanan, R., Sen, S., Tuzhilin,A.: Incorporating
+contextual information in recommender systems a multidimensional ap-
+proach. ACM Transactions on Information Systems (TOIS)23(1), 103–145 (2005).
+https://doi.org/10.1145/1055709.1055714
+3. Algergawy, A., Massmann, S., Rahm, E.: A Clustering- for Large-
+Scale Ontology Matching. In: East European Conference on Advances in Databases
+and Information Systems (ADBIS), . 415–428. Springer (2011).
+4. Alserafi, A., Abell ́o, A., Romero, O., Calders, T.: Towards Information Profiling:
+Data Lake Content Metadata Management. In: DINA Workshop, ICDM.. 178–
+185. IEEE (2016). https://doi.org/10.1109/ICDMW.2016.0033
+5. Alserafi, A., Calders, T., Abell ́o, A., Romero, O.: DS-prox: Dataset proxim-
+ity mining for governing the data lake. In: International Conference on Simi-
+larity Search and Applications. vol. 10609 LNCS, . 284–299.Springer (2017).
+https://doi.org/10.1007/978-3-319-68474-1
+20
+6. Ben Ellefi, M., Bellahsene, Z., Dietze, S., Todorov, K.: Dataset Recommenda-
+tion for Data Linking: An Intensional . In: Proceedingsof the Inter-
+national Semantic Web Conference: The Semantic Web. Latest Advances and Domains. vol. 9678, . 36–51. Springer (2016).http://link.springer.com/10.
+1007/978-3-319-34129-3
+7. Bernstein, P.A., Madhavan, J., Rahm, E.: Generic Schema Matching , Ten Years
+Later. Proceedings of the VLDB Endowment4(11), 695–701 (2011)
+8. Bilke, A., Naumann, F.: Schema Matching Duplicates.In: Proceedings of the
+21st International Conference on Data Engineering. . 69–80. IEEE (2005)
+9. Breiman, L.: Random Forests. Machine Learning45(1), 5–32 (2001)
+10. Chen, C., Halevy, A., Tan, W.c.: BigGorilla : An Open-Source Ecosystem for Data
+Preparation and Integration. IEEE Data Engineering Bulletin41(2), 10–22 (2018) 36A. Alserafi .
+11. Chen, Z., Jia, H., Heflin, J., Davison, B.D.: Generating Schema Labels
+through Dataset Content Analysis. In: Companion of the The WebConfer-
+ence 2018 on The Web Conference 2018 - WWW ’18. . 1515–1522 (2018).
+https://doi.org/10.1145/3184558.3191601
+12. Deng, D., Kim, A., Madden, S., Stonebraker, M.: SilkMoth: An Efficient Method
+for Finding Related Sets with Maximum Matching Constraints. Proceedings of the
+VLDB Endowment10(10), 1082–1093 (2017)
+13. Furche, T., Gottlob, G., Libkin, L., Orsi, G., Paton, N.W.:Data wrangling for big
+data: Challenges and opportunities. In: EDBT. vol. 16, . 473–478 (2016)
+14. Gallinucci, E., Golfarelli, M., Rizzi, S.: Schema profilingof
+document-oriented databases. Information Systems75, 13–25 (2018).
+https://doi.org/10.1016/j.is.2018.02.007
+15. Herlocker, J., Konstan, J.A., Terveen, L.G., Riedel, J.T.:Evaluating Collabora-
+tive Filtering Recommender Systems. ACM Transactions on Information Systems
+(TOIS)22(1), 5–53 (2004)
+16. Kandel, S., Heer, J., Plaisant, C., Kennedy, J., Van Ham, F., Riche, N.H., Weaver,
+C., Lee, B., Brodbeck, D., Buono, P.: Research directions in datawrangling: Vi-
+sualizations and transformations for usable and credible data. Information Visual-
+ization10(4), 271–288 (2011)
+17. Kim, J., Peng, Y., Ivezic, N., Shin, J.: An Optimization for Semantic- XML Schema Matching. International Journal of Trade, Economics and
+Finance2(1), 78 – 86 (2011)
+18. Kruse, S., Papenbrock, T., Harmouch, H., Naumann, F.: Data Anamnesis : Ad-
+mitting Raw Data into an Organization. Bulletin of the IEEE Computer Society
+Technical Committee on Data Engineering . 8–20 (2016)
+19. Lacoste-Julien, S., Palla, K., Davies, A., Kasneci, G., Graepel, T., Ghahramani,
+Z.: SiGMa: Simple Greedy Matching for Aligning Large KnowledgeBases. In: Pro-
+ceedings of the 19th ACM SIGKDD international conference. . 572–580 (2013).
+https://doi.org/10.1145/2487575.2487592
+20. Maccioni, A., Torlone, R.: KAYAK: A Framework for Just-in-Time Data Prepa-
+ration in a Data Lake. In: International Conference on Advanced Information
+Systems Engineering. . 474–489. Springer International Publishing (2018).
+https://doi.org/10.1007/978-3-319-91563-0
+21. Madhavan, J., Bernstein, P.a., Rahm, E.: Generic Schema Matching with Cupid.
+VLDB1, 49–58 (2001)
+22. Manning, C.D., Raghavan, P., Sch ̈utze, H.: An Introduction to Information Re-
+trieval. No. c (2009)
+23. Miller, R.: Open Data Integration. PVLDB11(12), 2130–2139 (2018)
+24. Naumann, F.: Data profiling revisited. ACM SIGMOD Record42(4), 40–49 (2014)
+25. Oliveira, A., Tessarolli, G., Ghiotto, G., Pinto, B., Campello, F., Marques, M.,
+Oliveira, C., Rodrigues, I., Kalinowski, M., Souza, U., Murta,L., Braganholo, V.:
+An efficient similarity- for comparing XML documents. Information
+Systems78, 40–57 (2018). https://doi.org/10.1016/j.is.2018.07.001
+26. de Oliveira, H.R., Tavares, A.T., L ́oscio, B.F.: Feedback- data set recommen-
+dation for building linked data applications. In: Proceedings of the 8th Interna-
+tional Conference on Semantic Systems - I-SEMANTICS ’12. p. 49. ACM (2012)
+27. Pei, J., Hong, J., Bell, D.: A novel clustering- to schema match-
+ing. In: Proceedings of the international conference on Advances in Information
+Systems. . 60–69. Springer (2006)
+28. Rahm, E.: Towards large-scale schema and ontology matching. In: Schema match-
+ing and mapping, . 3–27. Springer Berlin Heidelberg (2011) Proximity Mining for Pre-filtering Schema Matching37
+29. Rahm, E.: The Case for Holistic Data Integration. In: ADBIS. . 11–27 (2016).
+https://doi.org/10.1007/978-3-319-44039-2
+30. Rahm, E., Bernstein, P.A.: A survey of approaches to automatic schema matching.
+VLDB Journal10(4), 334–350 (2001). https://doi.org/10.1007/s007780100057
+31. Shvaiko, P.: A Survey of Schema- Matching Approaches. Journal on Data
+Semantics3730, 146–171 (2005).
+32. Steorts, R., Ventura, S., Sadinle, M., Fienberg, S.: A Comparison of Blocking
+Methods for Record Linkage. In: International Conference on Privacy in Statis-
+tical Databases. . 253–268 (2014)
+33. Suchanek, F.M., Abiteboul, S., Senellart, P.: PARIS : Probabilistic Alignment of
+Relations , Instances , and Schema. Proceedings of the VLDB Endowment5(3),
+157–168 (2011). https://doi.org/10.14778/2078331.2078332
+34. Tan, P.N., Steinbach, M., Kumar, V.: Introduction to data mining. Pearson Edu-
+cation (2006)
+35. Terrizzano, I., Schwarz, P., Roth, M., Colino, J.E.: Data Wrangling: The Challeng-
+ing Journey from the Wild to the Lake. In: 7th Biennial Conference on Innovative
+Data Systems Research CIDR’15 (2015)
+36. Vanschoren, J., van Rijn, J.N., Bischl, B., Torgo, L.: OpenML: networked science
+in machine learning. ACM SIGKDD Explorations Newsletter15(2), 49–60 (2014)
